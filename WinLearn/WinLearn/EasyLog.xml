@@ -1,0 +1,6 @@
+<node name='Dummy001' translation='(0,0,0)' rotation='(0,0,0)' scaling='(1,1,1)'>
+<attribute type='Null' name=''/>
+ </node>
+<node name='FBX_jse_qianting_paodan_01' translation='(0,0,0)' rotation='(-90,-13.4305,-180)' scaling='(1,1,1)'>
+<attribute type='Mesh' name=''/>
+ </node>
