@@ -1,0 +1,14 @@
+#visual studio
+Debug/
+Release/
+x64/
+WinLearn/WinLearn/Debug/
+
+*.idb
+*.tlog
+*.opendb
+
+
+CORE*.dll
+!*.dll
+!*.lib
