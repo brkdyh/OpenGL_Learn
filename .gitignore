@@ -4,10 +4,16 @@ Release/
 x64/
 WinLearn/WinLearn/Debug/
 
+#Debug
 *.idb
 *.tlog
 *.opendb
+*.obj
 
+#Release
+*.pdb
+*.ipdb
+*.iobj
 
 CORE*.dll
 !*.dll
