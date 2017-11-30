@@ -126,22 +126,19 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="CMD2Model.cpp" />
     <ClCompile Include="FBXProcesser.cpp" />
     <ClCompile Include="MagickTest.cpp" />
     <ClCompile Include="shaderWin.cpp" />
-    <ClCompile Include="Textfile.cpp" />
     <ClCompile Include="Texture.cpp" />
     <ClCompile Include="VboObject.cpp" />
     <ClCompile Include="window.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="CMD2Model.h" />
     <ClInclude Include="ComDef.h" />
     <ClInclude Include="EasyLog.h" />
     <ClInclude Include="FBXProcesser.h" />
-    <ClInclude Include="Textfile.h" />
     <ClInclude Include="Texture.h" />
+    <ClInclude Include="TgaProcesser.h" />
     <ClInclude Include="VboObject.h" />
     <ClInclude Include="_cFBXModel.h" />
   </ItemGroup>

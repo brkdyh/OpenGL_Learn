@@ -11,13 +11,19 @@
 
 FbxManager *mFbxManager;
 FbxScene *mFbxScene;
-char *fbxFileName;
+const char *fbxFilePath;
+const char *fbxFileName;
 int curMeshIndex = 0;
 ostringstream oss;
+std::string s;
 
-FBXProcesser::FBXProcesser(char *fileName)
+FBXProcesser::FBXProcesser(char *filePath, char *fileName)
 {
-	fbxFileName = fileName;
+	fbxFilePath = filePath;
+	s = filePath;
+	s = s.append("/");
+	s = s.append(fileName);
+	fbxFileName = s.c_str();		//模型路径
 }
 
 bool FBXProcesser::Init()
@@ -29,12 +35,7 @@ bool FBXProcesser::Init()
 	FbxIOSettings* ios = FbxIOSettings::Create(mFbxManager, IOSROOT);
 	mFbxManager->SetIOSettings(ios);
 
-	//std::string extension = "dll";
-	//std::string path = FbxGetApplicationDirectory();
-	//mFbxManager->LoadPluginsDirectory(path.c_str(), extension.c_str());
-
-
-	FbxImporter *mFbxImporter = FbxImporter::Create(mFbxManager, "");
+	FbxImporter *mFbxImporter = FbxImporter::Create(mFbxManager, fbxFileName);
 
 	if (!mFbxImporter->Initialize(fbxFileName, -1, mFbxManager->GetIOSettings()))
 	{
@@ -42,37 +43,39 @@ bool FBXProcesser::Init()
 	}
 
 	//load fbx scene
-	mFbxScene = FbxScene::Create(mFbxManager, "scene_1");
+	mFbxScene = FbxScene::Create(mFbxManager, fbxFileName);
 
 	mFbxImporter->Import(mFbxScene);
 	mFbxImporter->Destroy();
 
 	return true;
 }
-
+int gg = 0;
 void FBXProcesser::LoadNode()
 {
 	this->model = new _cFBXModel();
 
 	FbxNode *root = mFbxScene->GetRootNode();//根节点
-	//EasyLog::Inst()->Log(root->GetName());
 
+	//加载Fbx节点属性
 	for (int i = 0; i < root->GetChildCount(false); i++)
 	{
-		//EasyLog::Inst()->Log(root->GetChild(i)->GetName());
-		//EasyLog::Inst()->Log(GetAttributeTypeName(root->GetChild(i)->GetNodeAttribute()->GetAttributeType()));
-
 		FbxNode *curNode = root->GetChild(i);
 
 		PrintNode(curNode);
 
 		FbxNodeAttribute *curAtt = curNode->GetNodeAttribute();
 		switch (curAtt->GetAttributeType())
-		{
+		{		
 		case  FbxNodeAttribute::eMesh:	//网格
-			ProcessMesh(curNode->GetMesh());
+		{
+			std::string texPath = std::string(fbxFilePath);
+			texPath.append("/");
+			texPath.append(curNode->GetName());
+			ProcessMesh(curNode->GetMesh(), texPath.c_str());
+			gg++;
 			break;
-
+		}
 		case FbxNodeAttribute::eSkeleton:	//骨骼
 
 			break;
@@ -82,7 +85,9 @@ void FBXProcesser::LoadNode()
 		}
 	}
 
-	EasyLog::Inst()->Log(oss.str());
+	//单独加载纹理
+
+	//EasyLog::Inst()->Log(oss.str());
 }
 
 std::string FBXProcesser::GetAttributeTypeName(FbxNodeAttribute::EType type)
@@ -165,9 +170,9 @@ void ReadVertex(FbxMesh* pMesh, int ctrlPointIndex, vector3_t* pVertex)
 {
 	FbxVector4* pCtrlPoint = pMesh->GetControlPoints();
 
-	pVertex->point[0] = pCtrlPoint[ctrlPointIndex].mData[0] * 1.0f;
-	pVertex->point[1] = pCtrlPoint[ctrlPointIndex].mData[1] * 1.0f;
-	pVertex->point[2] = pCtrlPoint[ctrlPointIndex].mData[2] * 1.0f;
+	pVertex->point[0] = pCtrlPoint[ctrlPointIndex].mData[0] * 0.1f;
+	pVertex->point[1] = pCtrlPoint[ctrlPointIndex].mData[1] * 0.1f;
+	pVertex->point[2] = pCtrlPoint[ctrlPointIndex].mData[2] * 0.1f;
 }
 
 bool ReadUV(FbxMesh* pMesh, int ctrlPointIndex, int textureUVIndex, int uvLayer, vector2_t* pUV)
@@ -226,7 +231,7 @@ bool ReadUV(FbxMesh* pMesh, int ctrlPointIndex, int textureUVIndex, int uvLayer,
 	}
 }
 
-void FBXProcesser::ProcessMesh(FbxMesh *pMesh)
+void FBXProcesser::ProcessMesh(FbxMesh *pMesh, const char *texFilePath)
 {
 	if (pMesh == NULL)
 	{
@@ -238,22 +243,15 @@ void FBXProcesser::ProcessMesh(FbxMesh *pMesh)
 	cMesh->vexList = new vector3_t[cMesh->polygonCount * 3];
 	cMesh->UvList = new vector2_t[cMesh->polygonCount * 3];
 
-	//D3DXVECTOR3 vertex[3];
-	//D3DXVECTOR4 color[3];
-	//D3DXVECTOR3 normal[3];
-	//D3DXVECTOR3 tangent[3];
-	//D3DXVECTOR2 uv[3][2];
-	//cMesh->
-
 	int triangleCount = pMesh->GetPolygonCount();
-	int vertexCounter = 0;
+	int polygonVertexCounter = 0;			//多边形顶点索引
 
 	ostringstream oss;
 
 	vector3_t vertex;
 	vector2_t uv;
 
-	for (int i = 0; i < triangleCount; ++i)
+	for (int i = 0; i < triangleCount; i++)
 	{
 		for (int j = 0; j < 3; j++)
 		{
@@ -262,16 +260,6 @@ void FBXProcesser::ProcessMesh(FbxMesh *pMesh)
 			// Read the vertex  
 			ReadVertex(pMesh, ctrlPointIndex, &(vertex));
 
-			//oss << cMesh->vexList[j].point[0] << "," << cMesh->vexList[j].point[1] << "," << cMesh->vexList[j].point[2] << "\n";
-
-			// Read the color of each vertex  
-			//ReadColor(pMesh, ctrlPointIndex, vertexCounter, &color[j]);
-
-			// Read the UV of each vertex  
-			//for (int k = 0; k < 2; ++k)
-			//{
-
-			//}
 			ReadUV(pMesh, ctrlPointIndex, pMesh->GetTextureUVIndex(i, j), 0, &(uv));
 
 			//// Read the normal of each vertex  
@@ -281,13 +269,17 @@ void FBXProcesser::ProcessMesh(FbxMesh *pMesh)
 			//ReadTangent(pMesh, ctrlPointIndex, vertexCounter, &tangent[j]);
 
 			// 根据读入的信息组装三角形，并以某种方式使用即可，比如存入到列表中、保存到文件等...
-			cMesh->vexList[vertexCounter] = vertex;
-			cMesh->UvList[vertexCounter] = uv;
-			vertexCounter++;
+			cMesh->vexList[polygonVertexCounter] = vertex;
+			cMesh->UvList[polygonVertexCounter] = uv;
+			polygonVertexCounter++;
 		}
 	}
 
-	//EasyLog::Inst()->Log(oss.str());
+	//纹理
+	cMesh->tex = new Texture(GL_TEXTURE_2D, texFilePath, "tga");
+	oss << "纹理名称 = " << texFilePath << "\n";
+	EasyLog::Inst()->Log(oss.str());
+
 	this->model->meshList.push_back(*cMesh);
 }
 

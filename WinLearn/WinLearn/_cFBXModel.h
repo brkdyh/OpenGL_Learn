@@ -9,6 +9,7 @@
 #include <list>
 #include <numeric>
 #include <algorithm>
+#include <Texture.h>
 
 using namespace std;
 //FBX网格
@@ -20,6 +21,8 @@ public:
 	int *polygonVex;		//三角形顶点索引
 	vector3_t *vexList;		//顶点位置数组
 	vector2_t *UvList;		//顶点UV数组
+	const char *texFile;
+	Texture *tex;
 };
 
 //Fbx模型类

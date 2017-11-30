@@ -11,9 +11,7 @@
 
 // textfile.cpp    
 // simple reading and writing for text files
-#include "Textfile.h"  
 #include "Texture.h"
-#include "CMD2Model.h";
 #include <string.h>
 #include <math.h>;
 #include "FBXProcesser.h"
@@ -96,8 +94,8 @@ float radians = 0.0f;		// camera angle in radians
 
 							////// Mouse/Camera Variables
 int mouseX, mouseY;		// mouse coordinates
-float cameraX, cameraY, cameraZ;	// camera coordinates
-float lookX, lookY, lookZ;		// camera look-at coordinates
+float cameraX, cameraY, cameraZ=100.0f;	// camera coordinates
+float lookX, lookY, lookZ = -100.0f;		// camera look-at coordinates
 
 using namespace std;
 
@@ -107,6 +105,8 @@ HDC g_HDC;
 /*Shader*/
 GLuint vShader, fShader;
 GLuint vaoHandle;
+
+float rAngle = 0.0f;
 
 //顶点位置数组    
 float positionData[] = {
@@ -398,7 +398,6 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 		break;
 
 	case WM_CLOSE:					// windows is closing
-
 									// deselect rendering context and delete it
 		wglMakeCurrent(hDC, NULL);
 		wglDeleteContext(hRC);
@@ -421,7 +420,6 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 		glViewport(0, 0, width, height);	// reset the viewport to new dimensions
 		glMatrixMode(GL_PROJECTION);		// set projection matrix current matrix
 		glLoadIdentity();					// reset projection matrix
-
 											// calculate aspect ratio of window
 		gluPerspective(54.0f, (GLfloat)width / (GLfloat)height, 1.0f, 1000.0f);
 
@@ -433,6 +431,29 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 	case WM_KEYDOWN:					// is a key pressed?
 		//keyPressed[wParam] = true;
+		switch (wParam)
+		{
+		case 'Q':
+			lookX -= 3.0f;
+			break;
+		case 'E':
+			lookX += 3.0f;
+			break;
+		case 'A':
+			cameraX -= 1.0f;
+			break;
+		case 'D':
+			cameraX += 1.0f;
+			break;
+		case 'W':
+			cameraZ -= 1.0f;
+			break;
+		case 'S':
+			cameraZ += 1.0f;
+			break;
+		default:
+			break;
+		}
 		return 0;
 		break;
 
@@ -470,59 +491,70 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 	return (DefWindowProc(hwnd, message, wParam, lParam));
 }
 
-bool l = true;
+GLenum GetTexUnit(int index)
+{
+	switch (index)
+	{
+	case 0:
+		return GL_TEXTURE0;
+	case 1:
+		return GL_TEXTURE1;
+	default:
+		break;
+	}
+}
+
 void RenderFbxModel(_cFBXModel *model)
 {
 	ostringstream oss;
 
 	list<_cFBXMesh>::iterator ite;
+
+	int i = 0;
 	for (ite = model->meshList.begin(); ite != model->meshList.end(); ++ite)
 	{
+
 		_cFBXMesh curMesh = *ite;
-		//oss << "render polygon count = " << curMesh.polygonCount;
-		//渲染网格
-		glCullFace(GL_BACK);
-		// display the textured model with proper lighting normals
+		curMesh.tex->Load();
+		curMesh.tex->Bind(GetTexUnit(i));
+		i++;
 
 		vector3_t *vexList = &curMesh.vexList[0];
 		vector2_t *uvList = &curMesh.UvList[0];
 
-		//glColor3f(1.0f, 0.0f, 0.0f);
+		glEnable(GL_TEXTURE_2D);					// 开启2D纹理
 
+		glEnable(GL_DEPTH_TEST);					// 开启深度测试
+
+		glCullFace(GL_BACK);
+		glEnable(GL_CULL_FACE);
+
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); //指定混合函数
+		glEnable(GL_BLEND);
+
+		glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+
+		glShadeModel(GL_SMOOTH);
+
+		//渲染多边形网格
 		for (int i = 0; i < curMesh.polygonCount; i++)
 		{
-			glBegin(GL_TRIANGLE_FAN);
-			for (int j = 0; j < 3; j++)
-			{
-				glTexCoord2f(uvList[3 * i + j].point[0], uvList[3 * i + j].point[1]);
-				glVertex3fv(vexList[3 * i + j].point);
+			glBegin(GL_TRIANGLES);
 
-				//oss << uvList[3 * i + j].point[0] << "," << uvList[3 * i + j].point[1] << "\n";
-				//oss << vexList[3 * i + j].point[0] << "," << vexList[3 * i + j].point[1] << "," << vexList[3 * i + j].point[2] << "\n";
-			}
+			glTexCoord2f(uvList[3 * i].point[0], uvList[3 * i].point[1]);
+			glVertex3fv(vexList[3 * i].point);
+
+			glTexCoord2f(uvList[3 * i + 2].point[0], uvList[3 * i + 2].point[1]);
+			glVertex3fv(vexList[3 * i + 2].point);
+
+			glTexCoord2f(uvList[3 * i + 1].point[0], uvList[3 * i + 1].point[1]);
+			glVertex3fv(vexList[3 * i + 1].point);
+
 			glEnd();
-			//int polygonStartIndex = i * 3;
-
-			//int polygonVexIndex_0 = curMesh.polygonVex[polygonStartIndex];
-			//glTexCoord2f(uvList[polygonStartIndex].point[0], uvList[polygonStartIndex].point[1]);
-			//glVertex3fv(vexList[polygonStartIndex].point);
-
-			////glColor3f(0.0f, 0.0f, 1.0f);
-			//int polygonVexIndex_2 = i + 2;//curMesh.polygonVex[polygonStartIndex + 2];
-			//glTexCoord2f(uvList[polygonStartIndex+1].point[0], uvList[polygonStartIndex+1].point[1]);
-			//glVertex3fv(vexList[polygonStartIndex+1].point);
-
-			////glColor3f(0.0f, 1.0f, 0.0f);
-			//int polygonVexIndex_1 = i + 1;//curMesh.polygonVex[polygonStartIndex + 1];
-			//glTexCoord2f(uvList[polygonVexIndex_1].point[0], uvList[polygonVexIndex_1].point[1]);
-			//glVertex3fv(vexList[polygonVexIndex_1].point);
 		}
 
-		if (l)
-		{
-			//EasyLog::Inst()->Log(oss.str());
-			l = false;
-		}
+		glDisable(GL_TEXTURE_2D);					// 关闭2D纹理
+		glDisable(GL_BLEND);						// 关闭混合
 	}
 }
 
@@ -536,17 +568,18 @@ void RenderQuad()
 
 	glBegin(GL_QUADS);
 
-	glTexCoord2f(1.0f, 1.0f);
+	glTexCoord2f(0.0f, 1.0f);
 	glVertex3fv(leftTop);
 
-	glTexCoord2f(0.0f, 1.0f);
+	glTexCoord2f(1.0f, 1.0f);
 	glVertex3fv(rightTop);
 
-	glTexCoord2f(0.0f, 0.0f);
+	glTexCoord2f(1.0f, 0.0f);
 	glVertex3fv(rightBottom);
 
-	glTexCoord2f(1.0f, 0.0f);
+	glTexCoord2f(0.0f, 0.0f);
 	glVertex3fv(leftBottom);
+
 	glEnd();
 }
 
@@ -583,6 +616,48 @@ GLvoid DrawGround()
 	glDisable(GL_BLEND);
 } // end DrawGround()
 
+GLvoid DrawLookAtLine()
+{
+	// enable blending for anti-aliased lines
+	glEnable(GL_BLEND);
+
+	// set the color to a bright blue
+	glColor3f(0.5f, 0.7f, 0.5f);
+
+	// draw the lines
+	glBegin(GL_LINES);
+	glVertex3f(-250.0f, 50.0f, 150.0f);
+	glVertex3f(-250.0f, -50.0f, 50.0f);
+	glEnd();
+
+	// turn blending off
+	glDisable(GL_BLEND);
+} // end DrawGround()
+
+GLvoid DrawCube()
+{
+	// enable blending for anti-aliased lines
+	glEnable(GL_BLEND);
+
+	// set the color to a bright blue
+	glColor3f(0.5f, 0.7f, 0.5f);
+
+	// draw the lines
+	glBegin(GL_TRIANGLES);
+	glVertex3f(1.0f, 0.0f, 0.0f);
+	glVertex3f(0.0f, 1.0f, 0.0f);
+	glVertex3f(0.0f, 0.0f, 1.0f);
+	glVertex3f(1.0f, 0.0f, 0.0f);
+	glVertex3f(1.0f, 0.0f, 0.0f);
+	glVertex3f(1.0f, 0.0f, 0.0f);
+	glVertex3f(1.0f, 0.0f, 0.0f);
+	glVertex3f(1.0f, 0.0f, 0.0f);
+	glEnd();
+
+	// turn blending off
+	glDisable(GL_BLEND);
+} // end DrawGround()
+
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPervInstance, LPSTR lpCmdLine, int nShowCmd)
 {
 	HWND hwnd;
@@ -610,7 +685,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPervInstance, LPSTR lpCmdLine
 
 	hwnd = CreateWindowEx(NULL,
 		"MyClass",
-		"A REAL Window Applacation!",
+		"OpenGL Display!",
 		WS_OVERLAPPEDWINDOW | WS_VISIBLE | WS_SYSMENU,
 		100, 100,
 		400, 400,
@@ -640,21 +715,16 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPervInstance, LPSTR lpCmdLine
 	//绑定并加载VAO，VBO
 	//initVBO();
 
-	//加载模型
-	CMD2Model myModel = CMD2Model();
-	myModel.LoadModel("models\\ogro\\tris.md2");
-
 	//BindVBO()
 
 	//加载顶点和片段着色器对象并链接到一个程序对象上  
 	//InitShader("VertexShader.vert", "FragmentShader.frag");
 
-	FBXProcesser *process = new FBXProcesser("FbxModels/paodan.FBX");
+	FBXProcesser *process = new FBXProcesser("FbxModels", "shuimu.FBX");
 	process->Init();
 	process->LoadNode();
 
-	Texture tex = Texture(GL_TEXTURE_2D, "paodan.png");
-	tex.Load();
+	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);		// clear to black
 
 	while (!done)
 	{
@@ -682,45 +752,27 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPervInstance, LPSTR lpCmdLine
 
 			////glBindVertexArray(0);
 
-			//SwapBuffers(g_HDC);
-			//TranslateMessage(&msg);
-			//DispatchMessage(&msg);
-
-
 			radians = float(PI*(angle - 90.0f) / 180.0f);
-
-			// calculate the camera's position
-			cameraX = lookX + (float)sin(radians)*mouseY;	// multiplying by mouseY makes the
-			cameraZ = lookZ + (float)cos(radians)*mouseY;  // camera get closer/farther away with mouseY
-			cameraY = lookY + mouseY / 2.0f;
-
-			// calculate the camera look-at coordinates as the center
-			lookX = 0.0f;
-			lookY = 2.0f;
-			lookZ = 0.0f;
 
 			// clear screen and depth buffer
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 			glLoadIdentity();
 
 			// set the camera position
-			gluLookAt(cameraX, cameraY, cameraZ, lookX, lookY, lookZ, 0.0, 1.0, 0.0);
+			gluLookAt(cameraX, 10.0f, cameraZ, lookX, -10.0f, lookZ, 0.0, 1.0, 0.0);
 
 			glPushMatrix();
-			glRotatef(90.0f, -1.0f, 0.0f, 0.0f);
-			glColor3f(1.0, 1.0, 1.0);
-
-			//DrawGround();
-			//myModel.RenderFrame(0);
-			glEnable(GL_TEXTURE_2D);					// enable 2D texturing														
-			tex.Bind(GL_TEXTURE0);
-			RenderFbxModel(process->model);
-			//RenderQuad();
-
+			DrawGround();
 			glPopMatrix();
 
+			glTranslatef(0.0f, 0.0f, 50.0f);
+			glRotatef(-90.0f, 1.0f, 0.0f, 0.0f);
+			RenderFbxModel(process->model);
+
+			//RenderQuad();
 			glFlush();
 			SwapBuffers(g_HDC);			// bring backbuffer to foreground
+
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
 		}

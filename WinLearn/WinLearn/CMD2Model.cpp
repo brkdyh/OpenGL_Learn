@@ -98,10 +98,8 @@ int CMD2Model::Load(char *modelFile, char *skinFile)
 		}
 	}
 
-	Texture tex = Texture(GL_TEXTURE_2D, skinFile);
-	
+	//Texture tex = Texture(GL_TEXTURE_2D, skinFile);
 	//modelTex->
-
 	//modelTex = 
 }
 

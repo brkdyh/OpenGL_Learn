@@ -21,16 +21,10 @@
     <ClCompile Include="shaderWin.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="Textfile.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="MagickTest.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="Texture.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="CMD2Model.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="VboObject.cpp">
@@ -41,16 +35,10 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Textfile.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="Texture.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="ComDef.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="CMD2Model.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="VboObject.h">
@@ -63,6 +51,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="_cFBXModel.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="TgaProcesser.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
