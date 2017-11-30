@@ -3,6 +3,8 @@ Debug/
 Release/
 x64/
 WinLearn/WinLearn/Debug/
+*.sdf
+*.suo
 
 #Debug
 *.idb
