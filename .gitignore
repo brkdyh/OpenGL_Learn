@@ -1,8 +1,8 @@
-#visual studio
+﻿#visual studio
 Debug/
 Release/
 x64/
-WinLearn/WinLearn/Debug/
+
 *.sdf
 *.suo
 
@@ -11,6 +11,7 @@ WinLearn/WinLearn/Debug/
 *.tlog
 *.opendb
 *.obj
+*.db
 
 #Release
 *.pdb
