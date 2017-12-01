@@ -1,12 +1,8 @@
 #version 330
 
-in vec4 VertexPosition;    
-in vec4 VertexColor;  
-    
-out vec4 Color;    
+layout(location = 0) in vec3 VertexPosition;    
     
 void main()    
-{    
-    Color = VertexColor;    
-    gl_Position = VertexPosition;
+{       
+    gl_Position = vec4(VertexPosition,1.0);
 }    

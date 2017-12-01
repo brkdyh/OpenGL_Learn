@@ -4,24 +4,29 @@
 #define VBOOBJECT_H
 
 #include <glew.h>
-
-#define VBO_DATA_VERTEX = 0;
-#define VBO_DATA_UV = 1;
-#define VBO_DATA_VERTEX_COLOR = 2;
-
-typedef int VBO_DATA_TYPE;
+typedef enum
+{
+	VDT_VERTEX_POSITION = 0x0001,
+	VDT_VERTEX_UV = 0x0002,
+	VDT_VERTEX_COLOR = 0x0003,
+}VertexDataType;
 
 class VboObject
 {
 private:
-	GLuint *vertex;
-	GLuint *uv;
-	GLuint *vertexColor;
+	GLuint vboName;
+	GLfloat *vboData;
+	unsigned int dataCount;
+private:
+	void Transfer();
 
 public:
-	VboObject();
+	VertexDataType VDT;
+
+public:
+	VboObject(VertexDataType verDataType, GLfloat *data, unsigned int dataCount);
 	~VboObject();
-	int Bind(VBO_DATA_TYPE type, GLuint *data);
+	void GenBuffer();	
 };
 
 #endif

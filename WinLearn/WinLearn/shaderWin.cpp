@@ -19,6 +19,7 @@
 #include <stdio.h>;
 #include <list>;
 #include <sstream>;
+#include "VboObject.h"
 //#include "EasyLog.h"
 
 #define PI	3.14159
@@ -109,11 +110,12 @@ GLuint vaoHandle;
 float rAngle = 0.0f;
 
 //顶点位置数组    
-float positionData[] = {
-	-0.5f,-0.5f,0.0f,1.0f,
-	0.5f,-0.5f,0.0f,1.0f,
-	0.5f,0.5f,0.0f,1.0f,
-	-0.5f,0.5f,0.0f,1.0f,
+float positionData[] =
+{
+	-5.0f,-5.0f,5.0f,
+	5.0f,-5.0f,5.0f,
+	5.0f,5.0f,5.0f,
+	-5.0f,5.0f,5.0f,
 };
 
 //顶点uv数据
@@ -418,13 +420,13 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 		}
 
 		glViewport(0, 0, width, height);	// reset the viewport to new dimensions
-		glMatrixMode(GL_PROJECTION);		// set projection matrix current matrix
-		glLoadIdentity();					// reset projection matrix
-											// calculate aspect ratio of window
-		gluPerspective(54.0f, (GLfloat)width / (GLfloat)height, 1.0f, 1000.0f);
+		//glMatrixMode(GL_PROJECTION);		// set projection matrix current matrix
+		//glLoadIdentity();					// reset projection matrix
+		//									// calculate aspect ratio of window
+		//gluPerspective(54.0f, (GLfloat)width / (GLfloat)height, 1.0f, 1000.0f);
 
-		glMatrixMode(GL_MODELVIEW);			// set modelview matrix
-		glLoadIdentity();					// reset modelview matrix
+		//glMatrixMode(GL_MODELVIEW);			// set modelview matrix
+		//glLoadIdentity();					// reset modelview matrix
 
 		return 0;
 		break;
@@ -658,6 +660,11 @@ GLvoid DrawCube()
 	glDisable(GL_BLEND);
 } // end DrawGround()
 
+GLvoid RenderVBO()
+{
+	glDrawArrays(GL_QUADS, 0, 4);
+}
+
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPervInstance, LPSTR lpCmdLine, int nShowCmd)
 {
 	HWND hwnd;
@@ -717,14 +724,28 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPervInstance, LPSTR lpCmdLine
 
 	//BindVBO()
 
-	//加载顶点和片段着色器对象并链接到一个程序对象上  
-	//InitShader("VertexShader.vert", "FragmentShader.frag");
-
 	FBXProcesser *process = new FBXProcesser("FbxModels", "shuimu.FBX");
 	process->Init();
 	process->LoadNode();
 
 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);		// clear to black
+
+	//_cFBXMesh m = process->model->meshList.front();
+	//GLfloat *glV = new GLfloat[m.polygonCount * 3];
+
+	//for (int i = 0; i < m.polygonCount; i++)
+	//{
+	//	glV[i] = m.vexList[i].point[0];
+	//	glV[i + 1] = m.vexList[i].point[1];
+	//	glV[i + 2] = m.vexList[i].point[2];
+	//}
+
+	//VboObject vbo = VboObject(VDT_VERTEX_POSITION, glV, (unsigned int)(m.polygonCount * 3));
+	VboObject vbo = VboObject(VDT_VERTEX_POSITION, positionData, sizeof(positionData));
+	vbo.GenBuffer();
+
+	//加载顶点和片段着色器对象并链接到一个程序对象上  
+	InitShader("VertexShader_raw.vert", "FragmentShader_raw.frag");
 
 	while (!done)
 	{
@@ -756,18 +777,20 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPervInstance, LPSTR lpCmdLine
 
 			// clear screen and depth buffer
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-			glLoadIdentity();
+			//glLoadIdentity();
 
 			// set the camera position
-			gluLookAt(cameraX, 10.0f, cameraZ, lookX, -10.0f, lookZ, 0.0, 1.0, 0.0);
+			gluLookAt(cameraX, cameraX, cameraZ, lookX, lookX, lookZ, 0.0, 1.0, 0.0);
 
-			glPushMatrix();
+			//glPushMatrix();
 			DrawGround();
-			glPopMatrix();
+			//glPopMatrix();
 
-			glTranslatef(0.0f, 0.0f, 50.0f);
-			glRotatef(-90.0f, 1.0f, 0.0f, 0.0f);
-			RenderFbxModel(process->model);
+			//glTranslatef(0.0f, 0.0f, 50.0f);
+			//glRotatef(-90.0f, 1.0f, 0.0f, 0.0f);
+			//RenderFbxModel(process->model);
+
+			RenderVBO();
 
 			//RenderQuad();
 			glFlush();

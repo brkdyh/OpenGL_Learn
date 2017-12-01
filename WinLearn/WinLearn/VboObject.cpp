@@ -1,28 +1,49 @@
 #include <glew.h>
 #include "VboObject.h"
 
-#include <fbxsdk.h>
+VboObject::VboObject(VertexDataType verDataType, GLfloat *data, unsigned int dataCount)
+{
+	VDT = verDataType;
+	vboData = data;
+	this->dataCount = dataCount;
+}
 
-VboObject::VboObject()
+VboObject::~VboObject() 
 {
 
 }
 
-VboObject::~VboObject()
+void VboObject::GenBuffer()
 {
-
+	glGenBuffers(1, &vboName);
+	Transfer();
 }
 
-int VboObject::Bind(VBO_DATA_TYPE type, GLuint *data)
+void VboObject::Transfer()
 {
-	switch (type)
+	glBindBuffer(GL_ARRAY_BUFFER, vboName);		//°ó¶¨BO
+
+	glBufferData(vboName, dataCount, vboData, GL_STATIC_DRAW);
+	for (int i = 0; i < dataCount; i++)
 	{
-	case 0:
-		
+		vboData[i];
+	}
+	glEnableVertexAttribArray(VDT);
+	switch (VDT)
+	{
+	case VDT_VERTEX_POSITION:
+	{
+		glVertexAttribPointer(VDT, 3, GL_FLOAT, GL_FALSE, 0, 0);
 		break;
+	}
+	case VDT_VERTEX_UV:
+	{
+		glVertexAttribPointer(VDT, 2, GL_FLOAT, GL_FALSE, 0, 0);
+		break;
+	}
 	default:
 		break;
 	}
 
-	return 0;
+	//glBindBuffer(GL_ARRAY_BUFFER, 0);		//Çå³ýBO
 }
