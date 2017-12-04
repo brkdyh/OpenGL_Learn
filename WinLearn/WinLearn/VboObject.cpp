@@ -24,16 +24,13 @@ void VboObject::Transfer()
 	glBindBuffer(GL_ARRAY_BUFFER, vboName);		//°ó¶¨BO
 
 	glBufferData(vboName, dataCount, vboData, GL_STATIC_DRAW);
-	for (int i = 0; i < dataCount; i++)
-	{
-		vboData[i];
-	}
+
 	glEnableVertexAttribArray(VDT);
 	switch (VDT)
 	{
 	case VDT_VERTEX_POSITION:
 	{
-		glVertexAttribPointer(VDT, 3, GL_FLOAT, GL_FALSE, 0, 0);
+		glVertexAttribPointer(VDT, 4, GL_FLOAT, GL_FALSE, 0, 0);
 		break;
 	}
 	case VDT_VERTEX_UV:

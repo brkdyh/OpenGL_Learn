@@ -170,9 +170,9 @@ void ReadVertex(FbxMesh* pMesh, int ctrlPointIndex, vector3_t* pVertex)
 {
 	FbxVector4* pCtrlPoint = pMesh->GetControlPoints();
 
-	pVertex->point[0] = pCtrlPoint[ctrlPointIndex].mData[0] * 0.1f;
-	pVertex->point[1] = pCtrlPoint[ctrlPointIndex].mData[1] * 0.1f;
-	pVertex->point[2] = pCtrlPoint[ctrlPointIndex].mData[2] * 0.1f;
+	pVertex->point[0] = pCtrlPoint[ctrlPointIndex].mData[0] * 0.01f;
+	pVertex->point[1] = pCtrlPoint[ctrlPointIndex].mData[1] * 0.01f;
+	pVertex->point[2] = pCtrlPoint[ctrlPointIndex].mData[2] * 0.01f;
 }
 
 bool ReadUV(FbxMesh* pMesh, int ctrlPointIndex, int textureUVIndex, int uvLayer, vector2_t* pUV)
@@ -237,6 +237,8 @@ void FBXProcesser::ProcessMesh(FbxMesh *pMesh, const char *texFilePath)
 	{
 		return;
 	}
+
+	//GL_TEXTURE
 
 	_cFBXMesh *cMesh = new _cFBXMesh();
 	cMesh->polygonCount = pMesh->GetPolygonCount();

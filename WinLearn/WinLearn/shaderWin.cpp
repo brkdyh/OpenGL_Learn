@@ -112,10 +112,10 @@ float rAngle = 0.0f;
 //顶点位置数组    
 float positionData[] =
 {
-	-5.0f,-5.0f,5.0f,
-	5.0f,-5.0f,5.0f,
-	5.0f,5.0f,5.0f,
-	-5.0f,5.0f,5.0f,
+	-0.5f,-0.5f,0.0f,1.0f,
+	0.5f,-0.5f,0.0f,1.0f,
+	0.5f,0.5f,0.0f,1.0f,
+	-0.5f,0.5f,0.0f,1.0f
 };
 
 //顶点uv数据
@@ -255,6 +255,8 @@ void InitShader(const char *VShaderFile, const char *FShaderFile)
 	}
 }
 
+float *fa;
+int fcount;
 void initVBO()
 {
 	//绑定VAO  
@@ -271,10 +273,11 @@ void initVBO()
 	//绑定VBO以供使用    
 	glBindBuffer(GL_ARRAY_BUFFER, positionBufferHandle);
 	//加载数据到VBO    
-	glBufferData(GL_ARRAY_BUFFER,  sizeof(positionData),
-		positionData, GL_STATIC_DRAW);
+	//int s = sizeof(positionData);
 
-	//
+	glBufferData(GL_ARRAY_BUFFER, sizeof(fa[0])*fcount,
+		fa, GL_STATIC_DRAW);
+
 	glBindBuffer(GL_ARRAY_BUFFER, uvBufferHandle);
 	glBufferData(GL_ARRAY_BUFFER, 8 * sizeof(float),
 		uvData, GL_STATIC_DRAW);
@@ -741,11 +744,36 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPervInstance, LPSTR lpCmdLine
 	//}
 
 	//VboObject vbo = VboObject(VDT_VERTEX_POSITION, glV, (unsigned int)(m.polygonCount * 3));
-	VboObject vbo = VboObject(VDT_VERTEX_POSITION, positionData, sizeof(positionData));
-	vbo.GenBuffer();
+	//VboObject vbo = VboObject(VDT_VERTEX_POSITION, positionData, sizeof(positionData));
+	//vbo.GenBuffer();
+
+
+
+	//fcount = 16;
+
+	fcount = process->model->meshList.front().polygonCount * 4;
+	fa = new float[fcount];
+
+	for (int i = 0; i < 10; i++)
+	{
+		fa[i] = process->model->meshList.front().vexList->point[0];
+		fa[i + 1] = process->model->meshList.front().vexList->point[1];
+		fa[i + 2] = process->model->meshList.front().vexList->point[2];
+		fa[i + 3] = 1.0f;
+	}
+
+	//for (int i = 0; i < fcount; i++)
+	//{
+	//	fa[i] = positionData[i];
+	//}
+
+	initVBO();
+	//BindVBO();
 
 	//加载顶点和片段着色器对象并链接到一个程序对象上  
 	InitShader("VertexShader_raw.vert", "FragmentShader_raw.frag");
+
+
 
 	while (!done)
 	{
@@ -783,7 +811,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPervInstance, LPSTR lpCmdLine
 			gluLookAt(cameraX, cameraX, cameraZ, lookX, lookX, lookZ, 0.0, 1.0, 0.0);
 
 			//glPushMatrix();
-			DrawGround();
+			//DrawGround();
 			//glPopMatrix();
 
 			//glTranslatef(0.0f, 0.0f, 50.0f);
@@ -791,8 +819,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPervInstance, LPSTR lpCmdLine
 			//RenderFbxModel(process->model);
 
 			RenderVBO();
-
 			//RenderQuad();
+
 			glFlush();
 			SwapBuffers(g_HDC);			// bring backbuffer to foreground
 
