@@ -20,7 +20,7 @@
 #include <list>;
 #include <sstream>;
 #include "VboObject.h"
-//#include "EasyLog.h"
+#include "EasyLog.h"
 
 #define PI	3.14159
 
@@ -112,10 +112,18 @@ float rAngle = 0.0f;
 //顶点位置数组    
 float positionData[] =
 {
-	-0.5f,-0.5f,0.0f,1.0f,
-	0.5f,-0.5f,0.0f,1.0f,
-	0.5f,0.5f,0.0f,1.0f,
-	-0.5f,0.5f,0.0f,1.0f
+	-5.0f,-5.0f,20.0f,1.0f,
+	5.0f,-5.0f,20.0f,1.0f,
+	5.0f,5.0f,20.0f,1.0f,
+	-5.0f,5.0f,20.0f,1.0f
+};
+
+float positionData_1[] =
+{
+	-5.0f,-5.0f,20.0f,
+	5.0f,-5.0f,20.0f,
+	5.0f,5.0f,20.0f,
+	-5.0f,5.0f,20.0f,
 };
 
 //顶点uv数据
@@ -133,6 +141,10 @@ float colorData[] = {
 	0.0f, 0.0f, 1.0f,1.0f,
 	1.0f,1.0f,0.0f,1.0f
 };
+
+GLuint programHandle;
+
+ostringstream oss_1;
 
 //////////////////////////////////////////////////////////////////////////初始化shader
 void InitShader(const char *VShaderFile, const char *FShaderFile)
@@ -210,7 +222,10 @@ void InitShader(const char *VShaderFile, const char *FShaderFile)
 			glGetShaderInfoLog(fShader, logLen, &written, log);
 			//cerr << "fragment shader compile log : " << endl;
 			//cerr << log << endl;
-			//free(log);//释放空间    
+
+			oss_1 << "error = " << log;
+			free(log);//释放空间
+			EasyLog::Inst()->Log(oss_1.str());
 		}
 	}
 
@@ -219,7 +234,7 @@ void InitShader(const char *VShaderFile, const char *FShaderFile)
 	//3、链接着色器对象
 
 	//创建着色器程序    
-	GLuint programHandle = glCreateProgram();
+	programHandle = glCreateProgram();
 	if (!programHandle)
 	{
 		//cerr << "ERROR : create program failed" << endl;
@@ -247,11 +262,15 @@ void InitShader(const char *VShaderFile, const char *FShaderFile)
 				&written, log);
 			cerr << "Program log : " << endl;
 			cerr << log << endl;
+
+			oss_1 << "链接失败 --  Program log : " << log;
 		}
 	}
 	else//链接成功，在OpenGL管线中使用渲染程序    
 	{
-		glUseProgram(programHandle);
+		//glUseProgram(programHandle);
+		//oss_1 << "链接成功，使用着色器";
+		//EasyLog::Inst()->Log(oss_1.str());
 	}
 }
 
@@ -264,43 +283,45 @@ void initVBO()
 	glBindVertexArray(vaoHandle);
 
 	// Create and populate the buffer objects    
-	GLuint vboHandles[3];
-	glGenBuffers(3, vboHandles);
+	GLuint vboHandles[1];
+	glGenBuffers(1, vboHandles);
 	GLuint positionBufferHandle = vboHandles[0];
-	GLuint uvBufferHandle = vboHandles[1];
-	GLuint colorBufferHandle = vboHandles[2];
+	//GLuint uvBufferHandle = vboHandles[1];
+	//GLuint colorBufferHandle = vboHandles[2];
 
 	//绑定VBO以供使用    
 	glBindBuffer(GL_ARRAY_BUFFER, positionBufferHandle);
 	//加载数据到VBO    
-	//int s = sizeof(positionData);
+	int size_i = sizeof(fa[0])*fcount;
+	oss_1 << "float array size = " << size_i << "\n";
+	EasyLog::Inst()->Log(oss_1.str());
 
-	glBufferData(GL_ARRAY_BUFFER, sizeof(fa[0])*fcount,
+	glBufferData(GL_ARRAY_BUFFER, size_i,
 		fa, GL_STATIC_DRAW);
 
-	glBindBuffer(GL_ARRAY_BUFFER, uvBufferHandle);
-	glBufferData(GL_ARRAY_BUFFER, 8 * sizeof(float),
-		uvData, GL_STATIC_DRAW);
+	//glBindBuffer(GL_ARRAY_BUFFER, uvBufferHandle);
+	//glBufferData(GL_ARRAY_BUFFER, 8 * sizeof(float),
+	//	uvData, GL_STATIC_DRAW);
 
-	//绑定VBO以供使用    
-	glBindBuffer(GL_ARRAY_BUFFER, colorBufferHandle);
-	//加载数据到VBO    
-	glBufferData(GL_ARRAY_BUFFER, 16 * sizeof(float),
-		colorData, GL_STATIC_DRAW);
+	////绑定VBO以供使用    
+	//glBindBuffer(GL_ARRAY_BUFFER, colorBufferHandle);
+	////加载数据到VBO    
+	//glBufferData(GL_ARRAY_BUFFER, 16 * sizeof(float),
+	//	colorData, GL_STATIC_DRAW);
 
 	glEnableVertexAttribArray(0);//顶点坐标    
 	//调用glVertexAttribPointer之前需要进行绑定操作    
 	glBindBuffer(GL_ARRAY_BUFFER, positionBufferHandle);
-	glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, (GLubyte *)NULL);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (GLubyte *)NULL);
 
 
-	glEnableVertexAttribArray(1);//顶点uv
-	glBindBuffer(GL_ARRAY_BUFFER, uvBufferHandle);
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, (GLubyte *)NULL);
+	//glEnableVertexAttribArray(1);//顶点uv
+	//glBindBuffer(GL_ARRAY_BUFFER, uvBufferHandle);
+	//glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, (GLubyte *)NULL);
 
-	glEnableVertexAttribArray(2);//顶点颜色
-	glBindBuffer(GL_ARRAY_BUFFER, colorBufferHandle);
-	glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, 0, (GLubyte *)NULL);
+	//glEnableVertexAttribArray(2);//顶点颜色
+	//glBindBuffer(GL_ARRAY_BUFFER, colorBufferHandle);
+	//glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, 0, (GLubyte *)NULL);
 }
 
 void BindVBO(GLuint bindVaoHandle,GLuint *bindPositionData,GLuint *bindUvData,GLuint bindColorBufferHandle)
@@ -423,13 +444,13 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 		}
 
 		glViewport(0, 0, width, height);	// reset the viewport to new dimensions
-		//glMatrixMode(GL_PROJECTION);		// set projection matrix current matrix
-		//glLoadIdentity();					// reset projection matrix
-		//									// calculate aspect ratio of window
-		//gluPerspective(54.0f, (GLfloat)width / (GLfloat)height, 1.0f, 1000.0f);
+		glMatrixMode(GL_PROJECTION);		// set projection matrix current matrix
+		glLoadIdentity();					// reset projection matrix
+											// calculate aspect ratio of window
+		gluPerspective(54.0f, (GLfloat)width / (GLfloat)height, 1.0f, 1000.0f);
 
-		//glMatrixMode(GL_MODELVIEW);			// set modelview matrix
-		//glLoadIdentity();					// reset modelview matrix
+		glMatrixMode(GL_MODELVIEW);			// set modelview matrix
+		glLoadIdentity();					// reset modelview matrix
 
 		return 0;
 		break;
@@ -588,7 +609,7 @@ void RenderQuad()
 	glEnd();
 }
 
-const int   WORLD_SIZE = 250;
+const int WORLD_SIZE = 250;
 /*****************************************************************************
 DrawGround()
 
@@ -597,10 +618,10 @@ Draw a grid of blue lines to represent the ground.
 GLvoid DrawGround()
 {
 	// enable blending for anti-aliased lines
-	glEnable(GL_BLEND);
+	//glEnable(GL_BLEND);
 
 	// set the color to a bright blue
-	glColor3f(0.5f, 0.7f, 1.0f);
+	glColor3f(0.0f, 0.7f, 1.0f);
 
 	// draw the lines
 	glBegin(GL_LINES);
@@ -618,7 +639,7 @@ GLvoid DrawGround()
 	glEnd();
 
 	// turn blending off
-	glDisable(GL_BLEND);
+	//glDisable(GL_BLEND);
 } // end DrawGround()
 
 GLvoid DrawLookAtLine()
@@ -665,7 +686,7 @@ GLvoid DrawCube()
 
 GLvoid RenderVBO()
 {
-	glDrawArrays(GL_QUADS, 0, 4);
+	glDrawArrays(GL_TRIANGLES, 0, 2388);
 }
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPervInstance, LPSTR lpCmdLine, int nShowCmd)
@@ -722,58 +743,54 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPervInstance, LPSTR lpCmdLine
 		//cout << "Error initializing GLEW: " << glewGetErrorString(err) << endl;
 	}
 
-	//绑定并加载VAO，VBO
-	//initVBO();
-
-	//BindVBO()
-
-	FBXProcesser *process = new FBXProcesser("FbxModels", "shuimu.FBX");
+	FBXProcesser *process = new FBXProcesser("FbxModels", "shayu.FBX");
 	process->Init();
 	process->LoadNode();
-
-	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);		// clear to black
-
-	//_cFBXMesh m = process->model->meshList.front();
-	//GLfloat *glV = new GLfloat[m.polygonCount * 3];
-
-	//for (int i = 0; i < m.polygonCount; i++)
-	//{
-	//	glV[i] = m.vexList[i].point[0];
-	//	glV[i + 1] = m.vexList[i].point[1];
-	//	glV[i + 2] = m.vexList[i].point[2];
-	//}
-
-	//VboObject vbo = VboObject(VDT_VERTEX_POSITION, glV, (unsigned int)(m.polygonCount * 3));
-	//VboObject vbo = VboObject(VDT_VERTEX_POSITION, positionData, sizeof(positionData));
-	//vbo.GenBuffer();
-
-
-
-	//fcount = 16;
-
-	fcount = process->model->meshList.front().polygonCount * 4;
-	fa = new float[fcount];
-
-	for (int i = 0; i < 10; i++)
-	{
-		fa[i] = process->model->meshList.front().vexList->point[0];
-		fa[i + 1] = process->model->meshList.front().vexList->point[1];
-		fa[i + 2] = process->model->meshList.front().vexList->point[2];
-		fa[i + 3] = 1.0f;
-	}
-
-	//for (int i = 0; i < fcount; i++)
-	//{
-	//	fa[i] = positionData[i];
-	//}
-
-	initVBO();
-	//BindVBO();
 
 	//加载顶点和片段着色器对象并链接到一个程序对象上  
 	InitShader("VertexShader_raw.vert", "FragmentShader_raw.frag");
 
+	//fcount = 12;
 
+	_cFBXMesh curMesh = process->model->meshList.front();
+	vector3_t *vexList = &curMesh.vexList[0];
+
+	fcount = curMesh.polygonCount * 3 * 3;
+
+	oss_1 << "多边形数量 = " << curMesh.polygonCount << "\n\n";
+
+	fa = new float[fcount];
+
+	for (int i = 0; i < curMesh.polygonCount; i++)
+	{
+		int startIndex = i * 9;
+		fa[startIndex] = vexList[3 * i].point[0];
+		//oss_1 << 3 * i << " -顶点：" << fa[startIndex] << ",";
+		fa[startIndex + 1] = vexList[3 * i].point[1];
+		//oss_1 << "" << fa[startIndex + 1] << ",";
+		fa[startIndex + 2] = vexList[3 * i].point[2];
+		//oss_1 << "" << fa[startIndex + 2] << "\n";
+
+		fa[startIndex + 3] = vexList[3 * i + 2].point[0];
+		//oss_1 << 3 * i + 2 << " -顶点：" << fa[startIndex + 3] << ",";
+		fa[startIndex + 4] = vexList[3 * i + 2].point[1];
+		//oss_1 << "" << fa[startIndex + 4] << ",";
+		fa[startIndex + 5] = vexList[3 * i + 2].point[2];
+		//oss_1 << "" << fa[startIndex + 5] << "\n";
+
+		fa[startIndex + 6] = vexList[3 * i + 1].point[0];
+		//oss_1 << 3 * i + 1 << " -顶点：" << fa[startIndex + 6] << ",";
+		fa[startIndex + 7] = vexList[3 * i + 1].point[1];
+		//oss_1 << "" << fa[startIndex + 7] << ",";
+		fa[startIndex + 8] = vexList[3 * i + 1].point[2];
+		//oss_1 << "" << fa[startIndex + 8] << "\n\n";
+	}
+
+	EasyLog::Inst()->Log(oss_1.str());
+
+	initVBO();
+
+	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);		// clear to black
 
 	while (!done)
 	{
@@ -787,38 +804,26 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPervInstance, LPSTR lpCmdLine
 		{
 			Sleep(16);
 
-			//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-			//glLoadIdentity();
-
-
-			//glClear(GL_COLOR_BUFFER_BIT);
-
-			//////使用VAO、VBO绘制    
-			////glBindVertexArray(vaoHandle);
-			////tex.Bind(GL_TEXTURE0);
-
-			////glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-
-			////glBindVertexArray(0);
-
-			radians = float(PI*(angle - 90.0f) / 180.0f);
-
-			// clear screen and depth buffer
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-			//glLoadIdentity();
+			glLoadIdentity();
 
 			// set the camera position
-			gluLookAt(cameraX, cameraX, cameraZ, lookX, lookX, lookZ, 0.0, 1.0, 0.0);
+			gluLookAt(cameraX, 10.0f, cameraZ, lookX, 0.0f, lookZ, 0.0, 1.0, 0.0);
 
-			//glPushMatrix();
-			//DrawGround();
-			//glPopMatrix();
+			glPushMatrix();
+			DrawGround();
 
 			//glTranslatef(0.0f, 0.0f, 50.0f);
 			//glRotatef(-90.0f, 1.0f, 0.0f, 0.0f);
 			//RenderFbxModel(process->model);
 
+			//glUniform4dv()
+
+			glUseProgram(programHandle);
 			RenderVBO();
+			glUseProgram(NULL);
+			glPopMatrix();
+
 			//RenderQuad();
 
 			glFlush();

@@ -2,7 +2,7 @@
 #include <string.h>
 #include <iostream>
 #include <fbxsdk/fileio/fbximporter.h>;
-#include "EasyLog.h"
+//#include "EasyLog.h"
 #include <FBXProcesser.h>
 #include <comdef.h>
 #include <sstream>
@@ -170,9 +170,9 @@ void ReadVertex(FbxMesh* pMesh, int ctrlPointIndex, vector3_t* pVertex)
 {
 	FbxVector4* pCtrlPoint = pMesh->GetControlPoints();
 
-	pVertex->point[0] = pCtrlPoint[ctrlPointIndex].mData[0] * 0.01f;
-	pVertex->point[1] = pCtrlPoint[ctrlPointIndex].mData[1] * 0.01f;
-	pVertex->point[2] = pCtrlPoint[ctrlPointIndex].mData[2] * 0.01f;
+	pVertex->point[0] = pCtrlPoint[ctrlPointIndex].mData[0] * 1.0f;
+	pVertex->point[1] = pCtrlPoint[ctrlPointIndex].mData[1] * 1.0f;
+	pVertex->point[2] = pCtrlPoint[ctrlPointIndex].mData[2] * 1.0f;
 }
 
 bool ReadUV(FbxMesh* pMesh, int ctrlPointIndex, int textureUVIndex, int uvLayer, vector2_t* pUV)
@@ -280,7 +280,7 @@ void FBXProcesser::ProcessMesh(FbxMesh *pMesh, const char *texFilePath)
 	//ÎÆÀí
 	cMesh->tex = new Texture(GL_TEXTURE_2D, texFilePath, "tga");
 	oss << "ÎÆÀíÃû³Æ = " << texFilePath << "\n";
-	EasyLog::Inst()->Log(oss.str());
+	//EasyLog::Inst()->Log(oss.str());
 
 	this->model->meshList.push_back(*cMesh);
 }
