@@ -1,14 +1,18 @@
-#version 330
+﻿#version 330
 
 layout(location = 0) in vec3 VertexPosition; 
 layout(location = 1) in vec2 TexCoord ;   
-uniform mat4 gMV;
-uniform mat4 gP;
+ 
 out vec2 out_texcoord;
 
+uniform Matrix
+{
+	mat4 gMV;
+	mat4 gP;
+}matrix;
+
 void main()    
-{       
-    gl_Position = gP*(gMV*vec4(VertexPosition, 1.0));
-	//gl_Position = vec4(VertexPosition, 1.0);
+{
+    gl_Position = matrix.gP * (matrix.gMV*vec4(VertexPosition, 1.0));
 	out_texcoord = TexCoord;
 }    

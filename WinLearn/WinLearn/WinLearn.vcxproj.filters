@@ -27,10 +27,13 @@
     <ClCompile Include="Texture.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="VboObject.cpp">
+    <ClCompile Include="FBXProcesser.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="FBXProcesser.cpp">
+    <ClCompile Include="VertexDataTransfer.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="Material.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
@@ -39,9 +42,6 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="ComDef.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="VboObject.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="EasyLog.h">
@@ -54,6 +54,15 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="TgaProcesser.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="VertexDataTransfer.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Material.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="FileReadUtils.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

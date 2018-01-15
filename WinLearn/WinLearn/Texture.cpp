@@ -44,6 +44,7 @@ using namespace std;
 			//oss << "loading texture Info'" << m_fileName << "'";
 			//EasyLog::Inst()->Log(oss.str());
 			bLoaded = true;
+			glBindTexture(m_textureTarget, 0);
 			return true;
 		}
 		catch (Magick::Error& Error)
@@ -61,7 +62,13 @@ using namespace std;
 	void Texture::Bind(GLenum TextureUnit)
 	{
 		//glActiveTexture(TextureUnit);
-		glBindTexture(m_textureTarget, m_textureObj);
-		GLenum o = TextureUnit;
-		int i = 0;
+		glBindTexture(m_textureTarget, m_textureObj);		
+		//GLenum o = TextureUnit;
+		//int i = 0;
 	}
+
+	void Texture::Unbind()
+	{
+		glBindTexture(m_textureTarget, 0);
+	}
+

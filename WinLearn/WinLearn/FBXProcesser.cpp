@@ -8,6 +8,7 @@
 #include <sstream>
 #include <_cFBXModel.h>
 #include "core/math/fbxvector4.h"
+#include "Material.h"
 
 FbxManager *mFbxManager;
 FbxScene *mFbxScene;
@@ -170,9 +171,9 @@ void ReadVertex(FbxMesh* pMesh, int ctrlPointIndex, vector3_t* pVertex)
 {
 	FbxVector4* pCtrlPoint = pMesh->GetControlPoints();
 
-	pVertex->point[0] = pCtrlPoint[ctrlPointIndex].mData[0] * 1.0f;
-	pVertex->point[1] = pCtrlPoint[ctrlPointIndex].mData[1] * 1.0f;
-	pVertex->point[2] = pCtrlPoint[ctrlPointIndex].mData[2] * 1.0f;
+	pVertex->point[0] = pCtrlPoint[ctrlPointIndex].mData[0] * 0.05;
+	pVertex->point[1] = pCtrlPoint[ctrlPointIndex].mData[1] * 0.05;
+	pVertex->point[2] = pCtrlPoint[ctrlPointIndex].mData[2] * 0.05;
 }
 
 bool ReadUV(FbxMesh* pMesh, int ctrlPointIndex, int textureUVIndex, int uvLayer, vector2_t* pUV)
@@ -244,6 +245,8 @@ void FBXProcesser::ProcessMesh(FbxMesh *pMesh, const char *texFilePath)
 	cMesh->polygonCount = pMesh->GetPolygonCount();
 	cMesh->vexList = new vector3_t[cMesh->polygonCount * 3];
 	cMesh->UvList = new vector2_t[cMesh->polygonCount * 3];
+	cMesh->polygonPointArray = new float[cMesh->polygonCount * 3 * 3];
+	cMesh->polygonUvArray = new float[cMesh->polygonCount * 3 * 2];
 
 	int triangleCount = pMesh->GetPolygonCount();
 	int polygonVertexCounter = 0;			//多边形顶点索引
@@ -272,15 +275,26 @@ void FBXProcesser::ProcessMesh(FbxMesh *pMesh, const char *texFilePath)
 
 			// 根据读入的信息组装三角形，并以某种方式使用即可，比如存入到列表中、保存到文件等...
 			cMesh->vexList[polygonVertexCounter] = vertex;
+
+			//Write vertex
+			int  vbv = polygonVertexCounter * 3;
+			cMesh->polygonPointArray[vbv] = vertex.point[0];
+			cMesh->polygonPointArray[vbv + 1] = vertex.point[1];
+			cMesh->polygonPointArray[vbv + 2] = vertex.point[2];
+
+			//Write UV
 			cMesh->UvList[polygonVertexCounter] = uv;
+			int vbuv = polygonVertexCounter * 2;
+			cMesh->polygonUvArray[vbuv] = uv.point[0];
+			cMesh->polygonUvArray[vbuv + 1] = uv.point[1];
+
 			polygonVertexCounter++;
 		}
 	}
 
-	//纹理
-	cMesh->tex = new Texture(GL_TEXTURE_2D, texFilePath, "tga");
-	oss << "纹理名称 = " << texFilePath << "\n";
-	//EasyLog::Inst()->Log(oss.str());
+	//解析并创建材质
+	Material *mat = new Material(texFilePath,"Shader/Default.vert", "Shader/Default.frag");
+	cMesh->material = mat;
 
 	this->model->meshList.push_back(*cMesh);
 }

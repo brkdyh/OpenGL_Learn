@@ -13,6 +13,7 @@ public:
 	Texture(GLenum TextureTarget, const std::string &FileName, const std::string &fileType);
 	bool Load();
 	void Bind(GLenum TextureUnit);
+	void Unbind();
 
 public:
 	std::string m_fileName;

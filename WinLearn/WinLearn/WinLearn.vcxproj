@@ -128,18 +128,21 @@
   <ItemGroup>
     <ClCompile Include="FBXProcesser.cpp" />
     <ClCompile Include="MagickTest.cpp" />
+    <ClCompile Include="Material.cpp" />
     <ClCompile Include="shaderWin.cpp" />
     <ClCompile Include="Texture.cpp" />
-    <ClCompile Include="VboObject.cpp" />
+    <ClCompile Include="VertexDataTransfer.cpp" />
     <ClCompile Include="window.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ComDef.h" />
     <ClInclude Include="EasyLog.h" />
     <ClInclude Include="FBXProcesser.h" />
+    <ClInclude Include="FileReadUtils.h" />
+    <ClInclude Include="Material.h" />
     <ClInclude Include="Texture.h" />
     <ClInclude Include="TgaProcesser.h" />
-    <ClInclude Include="VboObject.h" />
+    <ClInclude Include="VertexDataTransfer.h" />
     <ClInclude Include="_cFBXModel.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

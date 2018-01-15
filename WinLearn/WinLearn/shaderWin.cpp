@@ -5,9 +5,7 @@
 #include <gl/GL.h>
 #include <gl/GLU.h>
 #include <GLAUX.H>
-#include "Textfile.h"
 #include <iostream>
-#include <Magick++.h>
 
 // textfile.cpp    
 // simple reading and writing for text files
@@ -19,79 +17,79 @@
 #include <stdio.h>;
 #include <list>;
 #include <sstream>;
-#include "VboObject.h"
+//#include "EasyLog.h"
+#include <math.h>
+#include "VertexDataTransfer.h"
+#include <FileReadUtils.h>
 #include "EasyLog.h"
 
 #define PI	3.14159
 
 using namespace std;
 
-unsigned char * readDataFromFile(char *fn)
-{
-	FILE *fp;
-	unsigned char *content = NULL;
-	int count = 0;
-	if (fn != NULL) {
-		fp = fopen(fn, "rb");
-		if (fp != NULL) {
-			fseek(fp, 0, SEEK_END);
-			count = ftell(fp);
-			rewind(fp);
-			if (count > 0) {
-				content = (unsigned char *)malloc(sizeof(unsigned char) * (count + 1));
-				count = fread(content, sizeof(unsigned char), count, fp);
-				content[count] = '\0';
-			}
-			fclose(fp);
-		}
-	}
-	return content;
-
-}
-
-//读入字符流  
-char *textFileRead(const char *fn)
-{
-	FILE *fp;
-	char *content = NULL;
-	int count = 0;
-	if (fn != NULL)
-	{
-		fp = fopen(fn, "rt");
-		if (fp != NULL)
-		{
-			fseek(fp, 0, SEEK_END);
-			count = ftell(fp);
-			rewind(fp);
-			if (count > 0)
-			{
-				content = (char *)malloc(sizeof(char) * (count + 1));
-				count = fread(content, sizeof(char), count, fp);
-				content[count] = '\0';
-			}
-			fclose(fp);
-		}
-	}
-	return content;
-}
-
-int textFileWrite(char *fn, char *s)
-{
-	FILE *fp;
-	int status = 0;
-	if (fn != NULL) {
-		fp = fopen(fn, "w");
-		if (fp != NULL) {
-			if (fwrite(s, sizeof(char), strlen(s), fp) == strlen(s))
-				status = 1;
-			fclose(fp);
-		}
-	}
-	return(status);
-}
-
-float angle = 0.0f;			// camera angle 
-float radians = 0.0f;		// camera angle in radians
+//unsigned char * readDataFromFile(char *fn)
+//{
+//	FILE *fp;
+//	unsigned char *content = NULL;
+//	int count = 0;
+//	if (fn != NULL) {
+//		fp = fopen(fn, "rb");
+//		if (fp != NULL) {
+//			fseek(fp, 0, SEEK_END);
+//			count = ftell(fp);
+//			rewind(fp);
+//			if (count > 0) {
+//				content = (unsigned char *)malloc(sizeof(unsigned char) * (count + 1));
+//				count = fread(content, sizeof(unsigned char), count, fp);
+//				content[count] = '\0';
+//			}
+//			fclose(fp);
+//		}
+//	}
+//	return content;
+//
+//}
+//
+////读入字符流  
+//char *textFileRead(const char *fn)
+//{
+//	FILE *fp;
+//	char *content = NULL;
+//	int count = 0;
+//	if (fn != NULL)
+//	{
+//		fp = fopen(fn, "rt");
+//		if (fp != NULL)
+//		{
+//			fseek(fp, 0, SEEK_END);
+//			count = ftell(fp);
+//			rewind(fp);
+//			if (count > 0)
+//			{
+//				content = (char *)malloc(sizeof(char) * (count + 1));
+//				count = fread(content, sizeof(char), count, fp);
+//				content[count] = '\0';
+//			}
+//			fclose(fp);
+//		}
+//	}
+//	return content;
+//}
+//
+//int textFileWrite(char *fn, char *s)
+//{
+//	FILE *fp;
+//	int status = 0;
+//	if (fn != NULL) {
+//		fp = fopen(fn, "w");
+//		if (fp != NULL) {
+//			if (fwrite(s, sizeof(char), strlen(s), fp) == strlen(s))
+//				status = 1;
+//			fclose(fp);
+//		}
+//	}
+//	return(status);
+//}
 
 							////// Mouse/Camera Variables
 int mouseX, mouseY;		// mouse coordinates
@@ -104,8 +102,8 @@ WNDCLASSEX windowClass;
 HDC g_HDC;
 
 /*Shader*/
+GLuint programHandle;
 GLuint vShader, fShader;
-GLuint vaoHandle;
 
 float rAngle = 0.0f;
 
@@ -116,6 +114,14 @@ float positionData[] =
 	5.0f,-5.0f,20.0f,1.0f,
 	5.0f,5.0f,20.0f,1.0f,
 	-5.0f,5.0f,20.0f,1.0f
+};
+
+float positionData_2[] =
+{
+	-0.5f,-0.5f,0.0f,
+	0.5f,-0.5f,0.0f,
+	0.5f,0.5f,0.0f,
+	-0.5f,0.5f,0.0f,
 };
 
 float positionData_1[] =
@@ -142,15 +148,10 @@ float colorData[] = {
 	1.0f,1.0f,0.0f,1.0f
 };
 
-GLuint programHandle;
+ostringstream oss_log;
 
-ostringstream oss_1;
-
-//////////////////////////////////////////////////////////////////////////初始化shader
-void InitShader(const char *VShaderFile, const char *FShaderFile)
+void LoadShader(const char *VShaderFile, const char *FShaderFile)
 {
-
-
 #pragma region 顶点着色器
 
 	vShader = glCreateShader(GL_VERTEX_SHADER);
@@ -223,9 +224,9 @@ void InitShader(const char *VShaderFile, const char *FShaderFile)
 			//cerr << "fragment shader compile log : " << endl;
 			//cerr << log << endl;
 
-			oss_1 << "error = " << log;
+			//oss_1 << "error = " << log;
 			free(log);//释放空间
-			EasyLog::Inst()->Log(oss_1.str());
+			//EasyLog::Inst()->Log(oss_1.str());
 		}
 	}
 
@@ -250,7 +251,6 @@ void InitShader(const char *VShaderFile, const char *FShaderFile)
 	glGetProgramiv(programHandle, GL_LINK_STATUS, &linkStatus);
 	if (GL_FALSE == linkStatus)
 	{
-		cerr << "ERROR : link shader program failed" << endl;
 		GLint logLen;
 		glGetProgramiv(programHandle, GL_INFO_LOG_LENGTH,
 			&logLen);
@@ -260,115 +260,54 @@ void InitShader(const char *VShaderFile, const char *FShaderFile)
 			GLsizei written;
 			glGetProgramInfoLog(programHandle, logLen,
 				&written, log);
-			cerr << "Program log : " << endl;
-			cerr << log << endl;
 
-			oss_1 << "链接失败 --  Program log : " << log;
+			oss_log << "链接失败 --  Program log : " << log;
+
+			EasyLog::Inst()->Log(oss_log.str());
 		}
 	}
 	else//链接成功，在OpenGL管线中使用渲染程序    
 	{
-		//glUseProgram(programHandle);
 		//oss_1 << "链接成功，使用着色器";
 		//EasyLog::Inst()->Log(oss_1.str());
 	}
 }
 
-float *fa;
-int fcount;
-void initVBO()
-{
-	//绑定VAO  
-	glGenVertexArrays(1, &vaoHandle);
-	glBindVertexArray(vaoHandle);
+float *vertexFloatArray;
+float *vertexUvArray;
+int vertexFloatCount;
+int vertexUvFloatCount;
 
-	// Create and populate the buffer objects    
-	GLuint vboHandles[1];
-	glGenBuffers(1, vboHandles);
-	GLuint positionBufferHandle = vboHandles[0];
-	//GLuint uvBufferHandle = vboHandles[1];
-	//GLuint colorBufferHandle = vboHandles[2];
-
-	//绑定VBO以供使用    
-	glBindBuffer(GL_ARRAY_BUFFER, positionBufferHandle);
-	//加载数据到VBO    
-	int size_i = sizeof(fa[0])*fcount;
-	oss_1 << "float array size = " << size_i << "\n";
-	EasyLog::Inst()->Log(oss_1.str());
-
-	glBufferData(GL_ARRAY_BUFFER, size_i,
-		fa, GL_STATIC_DRAW);
-
-	//glBindBuffer(GL_ARRAY_BUFFER, uvBufferHandle);
-	//glBufferData(GL_ARRAY_BUFFER, 8 * sizeof(float),
-	//	uvData, GL_STATIC_DRAW);
-
-	////绑定VBO以供使用    
-	//glBindBuffer(GL_ARRAY_BUFFER, colorBufferHandle);
-	////加载数据到VBO    
-	//glBufferData(GL_ARRAY_BUFFER, 16 * sizeof(float),
-	//	colorData, GL_STATIC_DRAW);
-
-	glEnableVertexAttribArray(0);//顶点坐标    
-	//调用glVertexAttribPointer之前需要进行绑定操作    
-	glBindBuffer(GL_ARRAY_BUFFER, positionBufferHandle);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (GLubyte *)NULL);
-
-
-	//glEnableVertexAttribArray(1);//顶点uv
-	//glBindBuffer(GL_ARRAY_BUFFER, uvBufferHandle);
-	//glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, (GLubyte *)NULL);
-
-	//glEnableVertexAttribArray(2);//顶点颜色
-	//glBindBuffer(GL_ARRAY_BUFFER, colorBufferHandle);
-	//glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, 0, (GLubyte *)NULL);
-}
-
-void BindVBO(GLuint bindVaoHandle,GLuint *bindPositionData,GLuint *bindUvData,GLuint bindColorBufferHandle)
-{
-	//绑定VAO  
-	glGenVertexArrays(1, &bindVaoHandle);
-	glBindVertexArray(bindVaoHandle);
-
-	// Create and populate the buffer objects    
-	GLuint vboHandles[3];
-	glGenBuffers(3, vboHandles);
-	GLuint positionBufferHandle = vboHandles[0];
-	GLuint uvBufferHandle = vboHandles[1];
-	GLuint colorBufferHandle = vboHandles[2];
-
-	//绑定VBO以供使用    
-	glBindBuffer(GL_ARRAY_BUFFER, positionBufferHandle);
-	//加载数据到VBO    
-	glBufferData(GL_ARRAY_BUFFER, sizeof(bindPositionData),
-		positionData, GL_STATIC_DRAW);
-
-	//uv-st
-	glBindBuffer(GL_ARRAY_BUFFER, uvBufferHandle);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(bindUvData),
-		uvData, GL_STATIC_DRAW);
-
-	//color
-	glBindBuffer(GL_ARRAY_BUFFER, colorBufferHandle);  
-	glBufferData(GL_ARRAY_BUFFER, sizeof(bindColorBufferHandle),
-		colorData, GL_STATIC_DRAW);
-
-	//传送数据
-	//调用glVertexAttribPointer之前需要进行绑定操作  
-	glEnableVertexAttribArray(0);//顶点坐标    
-	glBindBuffer(GL_ARRAY_BUFFER, positionBufferHandle);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (GLubyte *)NULL);
-
-
-	glEnableVertexAttribArray(1);//顶点uv
-	glBindBuffer(GL_ARRAY_BUFFER, uvBufferHandle);
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, (GLubyte *)NULL);
-
-
-	glEnableVertexAttribArray(2);//顶点颜色
-	glBindBuffer(GL_ARRAY_BUFFER, colorBufferHandle);
-	glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, 0, (GLubyte *)NULL);
-}
+//void initVBO()
+//{
+//	//绑定VAO  
+//	glGenVertexArrays(1, &vaoHandle);
+//	glBindVertexArray(vaoHandle);
+//
+//	// Create and populate the buffer objects    
+//	GLuint vboHandles[2];
+//	glGenBuffers(2, vboHandles);
+//	GLuint positionBufferHandle = vboHandles[0];
+//	GLuint uvBufferHandle = vboHandles[1];
+//
+//	//绑定VBO以供使用    
+//	glBindBuffer(GL_ARRAY_BUFFER, positionBufferHandle);
+//	glBufferData(GL_ARRAY_BUFFER, sizeof(vertexFloatArray[0])*vertexFloatCount, vertexFloatArray, GL_STATIC_DRAW);
+//
+//	glBindBuffer(GL_ARRAY_BUFFER, uvBufferHandle);
+//	glBufferData(GL_ARRAY_BUFFER, sizeof(vertexUvArray[0])*vertexUvFloatCount, vertexUvArray, GL_STATIC_DRAW);
+//
+//	////////////////////////////////////////////////////////////////////////// VAO--解释顶点属性
+//	glEnableVertexAttribArray(0);//顶点坐标    
+//	//调用glVertexAttribPointer之前需要进行绑定操作    
+//	glBindBuffer(GL_ARRAY_BUFFER, positionBufferHandle);
+//	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (GLubyte *)NULL);
+//
+//
+//	glEnableVertexAttribArray(1);//顶点uv
+//	glBindBuffer(GL_ARRAY_BUFFER, uvBufferHandle);
+//	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, (GLubyte *)NULL);
+//}
 
 void SetupPixelFromat(HDC hDC)
 {
@@ -447,7 +386,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 		glMatrixMode(GL_PROJECTION);		// set projection matrix current matrix
 		glLoadIdentity();					// reset projection matrix
 											// calculate aspect ratio of window
-		gluPerspective(54.0f, (GLfloat)width / (GLfloat)height, 1.0f, 1000.0f);
+
+		gluPerspective(60.0f, (GLfloat)width / (GLfloat)height, 1.0f, 1000.0f);
 
 		glMatrixMode(GL_MODELVIEW);			// set modelview matrix
 		glLoadIdentity();					// reset modelview matrix
@@ -503,10 +443,10 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 		if (mouseY > 450)
 			mouseY = 450;
 
-		if ((mouseX - oldMouseX) > 0)		// mouse moved to the right
-			angle += 3.0f;
-		else if ((mouseX - oldMouseX) < 0)	// mouse moved to the left
-			angle -= 3.0f;
+		//if ((mouseX - oldMouseX) > 0)		// mouse moved to the right
+		//	angle += 3.0f;
+		//else if ((mouseX - oldMouseX) < 0)	// mouse moved to the left
+		//	angle -= 3.0f;
 
 		return 0;
 		break;
@@ -517,17 +457,19 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 	return (DefWindowProc(hwnd, message, wParam, lParam));
 }
 
-GLenum GetTexUnit(int index)
+void GLReset()
 {
-	switch (index)
-	{
-	case 0:
-		return GL_TEXTURE0;
-	case 1:
-		return GL_TEXTURE1;
-	default:
-		break;
-	}
+	//清除帧缓存数据
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	//重置GL 设置
+	glDisable(GL_LIGHTING);
+	glDisable(GL_TEXTURE_2D);
+	glDisable(GL_BLEND);
+	glDisable(GL_DEPTH_TEST);
+
+	//重置变换矩阵
+	glLoadIdentity();
 }
 
 void RenderFbxModel(_cFBXModel *model)
@@ -542,7 +484,7 @@ void RenderFbxModel(_cFBXModel *model)
 
 		_cFBXMesh curMesh = *ite;
 		curMesh.tex->Load();
-		curMesh.tex->Bind(GetTexUnit(i));
+		curMesh.tex->Bind(GL_TEXTURE0);
 		i++;
 
 		vector3_t *vexList = &curMesh.vexList[0];
@@ -587,26 +529,73 @@ void RenderFbxModel(_cFBXModel *model)
 //渲染quad
 void RenderQuad()
 {
-	float leftTop[3] = { -10.0f,10.0f,0.0f };
-	float rightTop[3] = { 10.0f,10.0f,0.0f };
-	float leftBottom[3] = { -10.0f,-10.0f,0.0f };
-	float rightBottom[3] = { 10.0f,-10.0f,0.0f };
+	//glEnable(GL_TEXTURE_2D);					// 开启2D纹理
+	glEnable(GL_DEPTH_TEST);					// 开启深度测试
 
-	glBegin(GL_QUADS);
+	glEnable(GL_LIGHTING);
 
-	glTexCoord2f(0.0f, 1.0f);
-	glVertex3fv(leftTop);
+	//ambient
+	GLfloat light0_position[] = { 0.0, 10.0, 0.0, 1.0 };
+	glLightfv(GL_LIGHT0, GL_POSITION, light0_position);
 
-	glTexCoord2f(1.0f, 1.0f);
-	glVertex3fv(rightTop);
+	GLfloat light_ambient[] = { 1.0, 0.0, 0.0, 1.0 };
+	glLightfv(GL_LIGHT0, GL_AMBIENT, light_ambient);
 
-	glTexCoord2f(1.0f, 0.0f);
-	glVertex3fv(rightBottom);
+	glEnable(GL_LIGHT0);
 
-	glTexCoord2f(0.0f, 0.0f);
-	glVertex3fv(leftBottom);
+	//diffuse
+	GLfloat light1_position[] = { 0.0, 10.0, 0.0, 1.0 };
+	glLightfv(GL_LIGHT1, GL_POSITION, light1_position);
 
-	glEnd();
+	GLfloat light_diffuse[] = { 0.0, 0.0, 1.0, 1.0 };
+	glLightfv(GL_LIGHT1, GL_AMBIENT, light_diffuse);
+
+
+	glEnable(GL_LIGHT1);
+
+	GLUquadricObj *qobj = gluNewQuadric();
+	gluSphere(qobj, 10.0, 20, 16);
+
+	glDisable(GL_DEPTH_TEST);					// 开启深度测试
+
+	//glBegin(GL_QUADS);
+	//glNormal3f(0.0F, 0.0F, 1.0F);
+	//glVertex3f(10.0f, 10.0f, 10.0f);
+	//glVertex3f(-10.0f, 10.0f, 10.0f);
+	//glVertex3f(-10.0f, -10.0f, 10.0f);
+	//glVertex3f(10.0f, -10.0f, 10.0f);
+	////1----------------------------    
+	//glNormal3f(0.0F, 0.0F, -1.0F);
+	//glVertex3f(-10.0f, -10.0f, -10.0f);
+	//glVertex3f(-10.0f, 10.0f, -10.0f);
+	//glVertex3f(10.0f, 10.0f, -10.0f);
+	//glVertex3f(10.0f, -10.0f, -10.0f);
+	////2----------------------------    
+	//glNormal3f(0.0F, 1.0F, 0.0F);
+	//glVertex3f(10.0f, 10.0f, 10.0f);
+	//glVertex3f(10.0f, 10.0f, -10.0f);
+	//glVertex3f(-10.0f, 10.0f, -10.0f);
+	//glVertex3f(-10.0f, 10.0f, 10.0f);
+	////3----------------------------    
+	//glNormal3f(0.0F, -1.0F, 0.0F);
+	//glVertex3f(-10.0f, -10.0f, -10.0f);
+	//glVertex3f(10.0f, -10.0f, -10.0f);
+	//glVertex3f(10.0f, -10.0f, 10.0f);
+	//glVertex3f(-10.0f, -10.0f, 10.0f);
+	////4----------------------------    
+	//glNormal3f(1.0F, 0.0F, 0.0F);
+	//glVertex3f(10.0f, 10.0f, 10.0f);
+	//glVertex3f(10.0f, -10.0f, 10.0f);
+	//glVertex3f(10.0f, -10.0f, -10.0f);
+	//glVertex3f(10.0f, 10.0f, -10.0f);
+	////5----------------------------    
+	//glNormal3f(-1.0F, 0.0F, 0.0F);
+	//glVertex3f(-10.0f, -10.0f, -10.0f);
+	//glVertex3f(-10.0f, -10.0f, 10.0f);
+	//glVertex3f(-10.0f, 10.0f, 10.0f);
+	//glVertex3f(-10.0f, 10.0f, -10.0f);
+	////6----------------------------*/    
+	//glEnd();
 }
 
 const int WORLD_SIZE = 250;
@@ -617,14 +606,12 @@ Draw a grid of blue lines to represent the ground.
 *****************************************************************************/
 GLvoid DrawGround()
 {
-	// enable blending for anti-aliased lines
-	//glEnable(GL_BLEND);
-
-	// set the color to a bright blue
-	glColor3f(0.0f, 0.7f, 1.0f);
+	//set color
+	glColor3f(1.0f, 1.0f, 1.0f);
 
 	// draw the lines
 	glBegin(GL_LINES);
+
 	for (int x = -WORLD_SIZE; x < WORLD_SIZE; x += 10)
 	{
 		glVertex3i(x, 0, -WORLD_SIZE);
@@ -636,57 +623,58 @@ GLvoid DrawGround()
 		glVertex3i(-WORLD_SIZE, 0, z);
 		glVertex3i(WORLD_SIZE, 0, z);
 	}
+
 	glEnd();
+}
 
-	// turn blending off
-	//glDisable(GL_BLEND);
-} // end DrawGround()
+//GLvoid DrawCube()
+//{
+//	glEnable(GL_TEXTURE_2D);					// 开启2D纹理
+//	glEnable(GL_DEPTH_TEST);					// 开启深度测试
+//
+//	//GLfloat light_position[] = { 1.0, 1.0, 1.0, 0.0 };
+//	//glLightfv(GL_LIGHT0, GL_POSITION, light_position);
+//	//glEnable(GL_LIGHTING);
+//	//glEnable(GL_LIGHT0);
+//
+//	// enable blending for anti-aliased lines
+//	glEnable(GL_BLEND);
+//
+//	// set the color to a bright blue
+//	glColor3f(1.0f, 0.7f, 0.5f);
+//
+//	// draw the lines
+//	glBegin(GL_QUADS);
+//	glVertex3f(1.0f, 0.0f, 0.0f);
+//	glVertex3f(0.0f, 1.0f, 0.0f);
+//	glVertex3f(0.0f, 0.0f, 1.0f);
+//	glVertex3f(1.0f, 0.0f, 0.0f);
+//	glVertex3f(1.0f, 0.0f, 0.0f);
+//	glVertex3f(1.0f, 0.0f, 0.0f);
+//	glVertex3f(1.0f, 0.0f, 0.0f);
+//	glVertex3f(1.0f, 0.0f, 0.0f);
+//	glEnd();
+//
+//	// turn blending off
+//	glDisable(GL_BLEND);
+//} // end DrawGround()
 
-GLvoid DrawLookAtLine()
+GLvoid RenderVBO(GLsizei vertexCount)
 {
-	// enable blending for anti-aliased lines
-	glEnable(GL_BLEND);
+	glEnable(GL_TEXTURE_2D);					// 开启2D纹理
+	glEnable(GL_DEPTH_TEST);					// 开启深度测试
 
-	// set the color to a bright blue
-	glColor3f(0.5f, 0.7f, 0.5f);
+	//glEnable(GL_LIGHTING);
+	//glEnable(GL_LIGHT0);
 
-	// draw the lines
-	glBegin(GL_LINES);
-	glVertex3f(-250.0f, 50.0f, 150.0f);
-	glVertex3f(-250.0f, -50.0f, 50.0f);
-	glEnd();
+	////ambient
+	//GLfloat light0_position[] = { 0.0, 5, 0.0, 1.0 };
+	//glLightfv(GL_LIGHT0, GL_POSITION, light0_position);
+	//GLfloat light_ambient[] = { 1.0, 1.0, 1.0, 1.0 };
+	//glLightfv(GL_LIGHT0, GL_AMBIENT, light_ambient);
 
-	// turn blending off
-	glDisable(GL_BLEND);
-} // end DrawGround()
 
-GLvoid DrawCube()
-{
-	// enable blending for anti-aliased lines
-	glEnable(GL_BLEND);
-
-	// set the color to a bright blue
-	glColor3f(0.5f, 0.7f, 0.5f);
-
-	// draw the lines
-	glBegin(GL_TRIANGLES);
-	glVertex3f(1.0f, 0.0f, 0.0f);
-	glVertex3f(0.0f, 1.0f, 0.0f);
-	glVertex3f(0.0f, 0.0f, 1.0f);
-	glVertex3f(1.0f, 0.0f, 0.0f);
-	glVertex3f(1.0f, 0.0f, 0.0f);
-	glVertex3f(1.0f, 0.0f, 0.0f);
-	glVertex3f(1.0f, 0.0f, 0.0f);
-	glVertex3f(1.0f, 0.0f, 0.0f);
-	glEnd();
-
-	// turn blending off
-	glDisable(GL_BLEND);
-} // end DrawGround()
-
-GLvoid RenderVBO()
-{
-	glDrawArrays(GL_TRIANGLES, 0, 2388);
+	glDrawArrays(GL_TRIANGLES, 0, vertexCount);
 }
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPervInstance, LPSTR lpCmdLine, int nShowCmd)
@@ -743,54 +731,37 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPervInstance, LPSTR lpCmdLine
 		//cout << "Error initializing GLEW: " << glewGetErrorString(err) << endl;
 	}
 
-	FBXProcesser *process = new FBXProcesser("FbxModels", "shayu.FBX");
+	FBXProcesser *process = new FBXProcesser("Models", "shayu.FBX");
 	process->Init();
 	process->LoadNode();
 
-	//加载顶点和片段着色器对象并链接到一个程序对象上  
-	InitShader("VertexShader_raw.vert", "FragmentShader_raw.frag");
-
-	//fcount = 12;
-
 	_cFBXMesh curMesh = process->model->meshList.front();
-	vector3_t *vexList = &curMesh.vexList[0];
 
-	fcount = curMesh.polygonCount * 3 * 3;
+	//加载并绑定材质
+	curMesh.material->LoadTexture();
+	curMesh.material->Bind();
 
-	oss_1 << "多边形数量 = " << curMesh.polygonCount << "\n\n";
+	//curMesh.material->vertexShaderName = "Shader/DefaultLighting.vert";
+	//curMesh.material->FragmentShaderName = "Shader/DefaultLighting.frag";
+	//加载着色器 
+	LoadShader(curMesh.material->vertexShaderName.c_str(), curMesh.material->FragmentShaderName.c_str());
 
-	fa = new float[fcount];
+	vertexFloatCount = curMesh.polygonCount * 3 * 3;
+	vertexFloatArray = curMesh.polygonPointArray;
 
-	for (int i = 0; i < curMesh.polygonCount; i++)
-	{
-		int startIndex = i * 9;
-		fa[startIndex] = vexList[3 * i].point[0];
-		//oss_1 << 3 * i << " -顶点：" << fa[startIndex] << ",";
-		fa[startIndex + 1] = vexList[3 * i].point[1];
-		//oss_1 << "" << fa[startIndex + 1] << ",";
-		fa[startIndex + 2] = vexList[3 * i].point[2];
-		//oss_1 << "" << fa[startIndex + 2] << "\n";
+	vertexUvFloatCount = curMesh.polygonCount * 3 * 2;
+	vertexUvArray = curMesh.polygonUvArray;
 
-		fa[startIndex + 3] = vexList[3 * i + 2].point[0];
-		//oss_1 << 3 * i + 2 << " -顶点：" << fa[startIndex + 3] << ",";
-		fa[startIndex + 4] = vexList[3 * i + 2].point[1];
-		//oss_1 << "" << fa[startIndex + 4] << ",";
-		fa[startIndex + 5] = vexList[3 * i + 2].point[2];
-		//oss_1 << "" << fa[startIndex + 5] << "\n";
+	int vertexCount = curMesh.polygonCount * 3;
 
-		fa[startIndex + 6] = vexList[3 * i + 1].point[0];
-		//oss_1 << 3 * i + 1 << " -顶点：" << fa[startIndex + 6] << ",";
-		fa[startIndex + 7] = vexList[3 * i + 1].point[1];
-		//oss_1 << "" << fa[startIndex + 7] << ",";
-		fa[startIndex + 8] = vexList[3 * i + 1].point[2];
-		//oss_1 << "" << fa[startIndex + 8] << "\n\n";
-	}
+	VertexDataTransfer * transfer = new VertexDataTransfer(2);
+	VertexData *vexData = new VertexData(0, vertexFloatCount, vertexFloatArray, GL_STATIC_DRAW, GL_FLOAT, 0, 3);
+	VertexData *uvData = new VertexData(1, vertexUvFloatCount, vertexUvArray, GL_STATIC_DRAW, GL_FLOAT, 0, 2);
+	transfer->AddVertexData(vexData);
+	transfer->AddVertexData(uvData);
+	transfer->Transfer();
 
-	EasyLog::Inst()->Log(oss_1.str());
-
-	initVBO();
-
-	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);		// clear to black
+	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);		// clear to black
 
 	while (!done)
 	{
@@ -802,33 +773,66 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPervInstance, LPSTR lpCmdLine
 		}
 		else
 		{
-			Sleep(16);
+			//Sleep(16);
 
-			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-			glLoadIdentity();
+			GLReset();
 
 			// set the camera position
 			gluLookAt(cameraX, 10.0f, cameraZ, lookX, 0.0f, lookZ, 0.0, 1.0, 0.0);
 
-			glPushMatrix();
+			//Draw Ground
 			DrawGround();
 
-			//glTranslatef(0.0f, 0.0f, 50.0f);
-			//glRotatef(-90.0f, 1.0f, 0.0f, 0.0f);
-			//RenderFbxModel(process->model);
-
-			//glUniform4dv()
-
-			glUseProgram(programHandle);
-			RenderVBO();
-			glUseProgram(NULL);
-			glPopMatrix();
-
+			//测试光照
 			//RenderQuad();
 
+			//Do Transform
+			glTranslatef(0.0f, 0.0f, 0.0f);
+			glRotatef(-45.0, 1.0, 0.0, 0.0);
+			glRotatef(45.0, 0.0, 0.0, 1.0);
+
+			//Get Transform Matrix
+			GLfloat *modle_view_mat = new GLfloat[16];
+			glGetFloatv(GL_MODELVIEW_MATRIX, modle_view_mat);
+
+			GLfloat *projection_mat = new GLfloat[16];
+			glGetFloatv(GL_PROJECTION_MATRIX, projection_mat);
+
+			GLfloat light_ambient[] = { 1.0, 1.0, 1.0, 1.0 };
+
+			GLuint uniBlock = glGetUniformBlockIndex(programHandle, "Matrix");
+
+			if (uniBlock != GL_INVALID_INDEX)
+			{
+				//todo 传递 uniform 变量
+				GLint  blockDataSize = 0;
+				glGetActiveUniformBlockiv(programHandle, uniBlock, GL_UNIFORM_BLOCK_DATA_SIZE, &blockDataSize);
+
+				GLuint uboHandle;
+				glGenBuffers(1, &uboHandle);
+				glBindBuffer(GL_UNIFORM_BUFFER, uboHandle);
+			}
+
+			//绑定当前的 Shader
+			glUseProgram(programHandle);
+
+			//Push Matrix
+			glPushMatrix();
+
+			//Rendering
+			RenderVBO(vertexCount);
+
+			//Pop Matrix
+			glPopMatrix();
+
+			//解除 Shader
+			glUseProgram(NULL);
+
+			//Refresh Frame Buffer
 			glFlush();
 			SwapBuffers(g_HDC);			// bring backbuffer to foreground
 
+			//Window Message Handle
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
 		}

@@ -10,6 +10,7 @@
 #include <numeric>
 #include <algorithm>
 #include <Texture.h>
+#include "Material.h"
 
 using namespace std;
 //FBX网格
@@ -23,6 +24,9 @@ public:
 	vector2_t *UvList;		//顶点UV数组
 	const char *texFile;
 	Texture *tex;
+	float *polygonPointArray;	//三角形顶点数组数据
+	float *polygonUvArray;		//三角形UV数组数据
+	Material *material;
 };
 
 //Fbx模型类
