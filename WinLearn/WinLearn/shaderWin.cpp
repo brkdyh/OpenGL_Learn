@@ -811,6 +811,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPervInstance, LPSTR lpCmdLine
 				GLuint uboHandle;
 				glGenBuffers(1, &uboHandle);
 				glBindBuffer(GL_UNIFORM_BUFFER, uboHandle);
+				glBufferData(GL_UNIFORM_BUFFER, blockDataSize, NULL, GL_STATIC_DRAW);
+				glUniformBlockBinding(programHandle, uniBlock, 0);
+				glBindBuffer(GL_UNIFORM_BUFFER, NULL);
 			}
 
 			//绑定当前的 Shader
